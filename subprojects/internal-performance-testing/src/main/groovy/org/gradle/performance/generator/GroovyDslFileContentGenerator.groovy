@@ -94,7 +94,7 @@ class GroovyDslFileContentGenerator extends FileContentGenerator {
 
     @Override
     protected String directDependencyDeclaration(String configuration, String notation) {
-        "$configuration '$notation'"
+        notation.endsWith('()') ? "$configuration $notation" : "$configuration '$notation'"
     }
 
     @Override

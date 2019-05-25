@@ -17,63 +17,103 @@
 package org.gradle.performance.generator
 
 import groovy.transform.CompileStatic
-import org.gradle.test.fixtures.dsl.GradleDsl
+import org.gradle.test.fixtures.language.Language
 
-import static org.gradle.test.fixtures.dsl.GradleDsl.GROOVY
 import static org.gradle.test.fixtures.dsl.GradleDsl.KOTLIN
-import static org.gradle.integtests.fixtures.RepoScriptBlockUtil.mavenCentralRepositoryDefinition
-import static org.gradle.performance.generator.CompositeConfiguration.composite
 
 @CompileStatic
 enum JavaTestProject {
+    LARGE_MONOLITHIC_JAVA_PROJECT(new TestProjectGeneratorConfiguration("largeMonolithicJavaProject")
+        .setSourceFiles(50000)
+        .setSubProjects(0)
+        .setDaemonMemory('1536m')
+        .setCompilerMemory('4g')
+        .assembleChangeFile(-1)
+        .testChangeFile(-1)),
+    LARGE_JAVA_MULTI_PROJECT(new TestProjectGeneratorConfiguration("largeJavaMultiProject")
+        .setSourceFiles(100)
+        .setSubProjects(500)
+        .setDaemonMemory('1536m')
+        .setCompilerMemory('256m')
+        .assembleChangeFile()
+        .testChangeFile(450, 2250, 45000)),
+    LARGE_MONOLITHIC_GROOVY_PROJECT(new TestProjectGeneratorConfiguration("largeMonolithicGroovyProject")
+        .setSourceFiles(50000)
+        .setSubProjects(0)
+        .setDaemonMemory('1536m')
+        .setCompilerMemory('4g')
+        .assembleChangeFile(-1)
+        .testChangeFile(-1)
+        .setLanguage(Language.GROOVY)),
+    LARGE_GROOVY_MULTI_PROJECT(new TestProjectGeneratorConfiguration("largeGroovyMultiProject")
+        .setSourceFiles(100)
+        .setSubProjects(500)
+        .setDaemonMemory('1536m')
+        .setCompilerMemory('256m')
+        .assembleChangeFile()
+        .testChangeFile(450, 2250, 45000)),
+    LARGE_JAVA_MULTI_PROJECT_KOTLIN_DSL(new TestProjectGeneratorConfiguration("largeJavaMultiProjectKotlinDsl", "largeJavaMultiProject")
+        .setSourceFiles(100)
+        .setSubProjects(500)
+        .setDaemonMemory('1536m')
+        .setCompilerMemory('256m')
+        .assembleChangeFile()
+        .testChangeFile(450, 2250, 45000)
+        .setDsl(KOTLIN)
+    ),
 
-    LARGE_MONOLITHIC_JAVA_PROJECT("largeMonolithicJavaProject", GROOVY, 50000, 0, '1536m', '4g', false, [assemble: productionFile('largeMonolithicJavaProject', -1), test: productionFile('largeMonolithicJavaProject', -1)]),
-    LARGE_JAVA_MULTI_PROJECT("largeJavaMultiProject", GROOVY, 100, 500, '1536m', '256m', false, [assemble: productionFile('largeJavaMultiProject'), test: productionFile('largeJavaMultiProject', 450, 2250, 45000)]),
-    LARGE_JAVA_MULTI_PROJECT_KOTLIN_DSL("largeJavaMultiProjectKotlinDsl", KOTLIN, 100, 500, '1536m', '256m', false, [assemble: productionFile('largeJavaMultiProject'), test: productionFile('largeJavaMultiProject', 450, 2250, 45000)]),
+    MEDIUM_MONOLITHIC_JAVA_PROJECT(new TestProjectGeneratorConfiguration("mediumMonolithicJavaProject")
+        .setSourceFiles(10000)
+        .setSubProjects(0)
+        .setDaemonMemory('512m')
+        .setCompilerMemory('1g')
+        .assembleChangeFile(-1)
+    ),
+    MEDIUM_JAVA_MULTI_PROJECT(new TestProjectGeneratorConfiguration("mediumJavaMultiProject")
+        .setSourceFiles(100)
+        .setSubProjects(100)
+        .setDaemonMemory('512m')
+        .setCompilerMemory('256m')
+        .assembleChangeFile()
+    ),
+    MEDIUM_JAVA_COMPOSITE_BUILD(new TestProjectGeneratorConfiguration("mediumJavaCompositeBuild", "mediumJavaMultiProject")
+        .setSourceFiles(100)
+        .setSubProjects(100)
+        .setDaemonMemory('768m')
+        .setCompilerMemory('256m')
+        .assembleChangeFile()
+        .composite(false)
+    ),
+    MEDIUM_JAVA_PREDEFINED_COMPOSITE_BUILD(new TestProjectGeneratorConfiguration("mediumJavaPredefinedCompositeBuild", "mediumJavaMultiProject")
+        .setSourceFiles(100)
+        .setSubProjects(100)
+        .setDaemonMemory('768m')
+        .setCompilerMemory('256m')
+        .assembleChangeFile()
+        .composite(true)
+    ),
+    MEDIUM_JAVA_MULTI_PROJECT_WITH_TEST_NG(new TestProjectGeneratorConfiguration("mediumJavaMultiProjectWithTestNG")
+        .setSourceFiles(100)
+        .setSubProjects(100)
+        .setDaemonMemory('512m')
+        .setCompilerMemory('256m')
+        .assembleChangeFile()
+        .testChangeFile(50, 250, 5000)
+        .setUseTestNG(true)
+    ),
 
-    MEDIUM_MONOLITHIC_JAVA_PROJECT("mediumMonolithicJavaProject", GROOVY, 10000, 0, '512m', '1g', false, [assemble: productionFile('mediumMonolithicJavaProject', -1)]),
-    MEDIUM_JAVA_MULTI_PROJECT("mediumJavaMultiProject", GROOVY, 100, 100, '512m', '256m', false, [assemble: productionFile('mediumJavaMultiProject')]),
-    MEDIUM_JAVA_COMPOSITE_BUILD("mediumJavaCompositeBuild", GROOVY, composite(false), 100, 100, '768m', '256m', false, [assemble: productionFile('mediumJavaMultiProject')]),
-    MEDIUM_JAVA_PREDEFINED_COMPOSITE_BUILD("mediumJavaPredefinedCompositeBuild", GROOVY, composite(true), 100, 100, '768m',  '256m', false, [assemble: productionFile('mediumJavaMultiProject')]),
-    MEDIUM_JAVA_MULTI_PROJECT_WITH_TEST_NG("mediumJavaMultiProjectWithTestNG", GROOVY, 100, 100, '512m', '256m', true, [assemble: productionFile('mediumJavaMultiProjectWithTestNG'), test: productionFile('mediumJavaMultiProjectWithTestNG', 50, 250, 5000)]),
-
-    SMALL_JAVA_MULTI_PROJECT("smallJavaMultiProject", GROOVY, 50, 10, '256m', '64m', false, [assemble: productionFile('smallJavaMultiProject')]),
+    SMALL_JAVA_MULTI_PROJECT(new TestProjectGeneratorConfiguration("smallJavaMultiProject")
+        .setSourceFiles(50)
+        .setSubProjects(10)
+        .setDaemonMemory("256m")
+        .setCompilerMemory("64m")
+        .assembleChangeFile()
+    )
 
     private TestProjectGeneratorConfiguration config
 
-    JavaTestProject(String projectName, GradleDsl dsl, CompositeConfiguration compositeConfiguration = null, int sourceFiles, int subProjects, String daemonMemory, String compilerMemory, boolean useTestNG, Map<String, String> filesToUpdate) {
-        this.config = new TestProjectGeneratorConfiguration()
-        config.projectName = projectName
-
-        config.dsl = dsl
-
-        config.plugins = ['java', 'eclipse', 'idea']
-        config.repositories = [mavenCentralRepositoryDefinition(dsl)]
-        config.externalApiDependencies = ['commons-lang:commons-lang:2.5', 'commons-httpclient:commons-httpclient:3.0',
-                                          'commons-codec:commons-codec:1.2', 'org.slf4j:jcl-over-slf4j:1.7.10']
-        config.externalImplementationDependencies = ['com.googlecode:reflectasm:1.01']
-
-        config.subProjects = subProjects
-        config.sourceFiles = sourceFiles
-        config.minLinesOfCodePerSourceFile = 100
-        config.daemonMemory = daemonMemory
-        config.compilerMemory = compilerMemory
-        config.testRunnerMemory = '256m'
-        config.parallel = subProjects > 0
-        config.maxWorkers = 4
-        config.maxParallelForks = subProjects > 0 ? 1 : 4
-        config.testForkEvery = 10000
-        config.useTestNG = useTestNG
-        config.fileToChangeByScenario = filesToUpdate
-        config.compositeBuild = compositeConfiguration
-    }
-
-    private static String productionFile(String template, int project = 0, int pkg = 0, int file = 0) {
-        if (project >= 0) {
-            "project${project}/src/main/java/org/gradle/test/performance/${template.toLowerCase()}/project${project}/p${pkg}/Production${file}.java"
-        } else {
-            "src/main/java/org/gradle/test/performance/${template.toLowerCase()}/p${pkg}/Production${file}.java"
-        }
+    JavaTestProject(TestProjectGeneratorConfiguration config) {
+        this.config = config.build()
     }
 
     TestProjectGeneratorConfiguration getConfig() {
