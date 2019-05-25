@@ -62,9 +62,11 @@ abstract class FileContentGenerator {
         ${dependenciesBlock('api', 'implementation', 'testImplementation', subProjectNumber, dependencyTree)}             
 
         allprojects {
+            dependencies{
         ${
             language == Language.GROOVY ? directDependencyDeclaration('implementation', 'localGroovy()') : ""
         }
+            }
         }
 
 

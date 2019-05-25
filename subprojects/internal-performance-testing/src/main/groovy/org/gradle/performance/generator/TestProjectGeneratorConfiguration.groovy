@@ -41,7 +41,7 @@ class TestProjectGeneratorConfiguration {
     GradleDsl dsl = GradleDsl.GROOVY
     Language language = Language.JAVA
 
-    String[] plugins = ['groovy', 'eclipse', 'idea']
+    String[] plugins
     String[] repositories
     String[] externalApiDependencies = ['commons-lang:commons-lang:2.5', 'commons-httpclient:commons-httpclient:3.0',
                                         'commons-codec:commons-codec:1.2', 'org.slf4j:jcl-over-slf4j:1.7.10']
@@ -89,6 +89,7 @@ class TestProjectGeneratorConfiguration {
         repositories = [mavenCentralRepositoryDefinition(dsl)]
         parallel = subProjects > 0
         maxParallelForks = subProjects > 0 ? 1 : 4
+        plugins = dsl == GradleDsl.GROOVY ? ['groovy', 'java', 'eclipse', 'idea'] : ['java', 'eclipse', 'idea']
         return this
     }
 }
