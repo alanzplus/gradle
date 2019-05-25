@@ -29,20 +29,19 @@ import org.gradle.internal.Factory;
 import org.gradle.internal.file.PathToFileResolver;
 import org.gradle.internal.nativeintegration.services.FileSystems;
 import org.gradle.util.DeferredUtil;
-import org.gradle.util.GUtil;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedList;
+import java.util.Deque;
 import java.util.List;
 
 public class DefaultFileCollectionResolveContext implements ResolvableFileCollectionResolveContext {
     protected final PathToFileResolver fileResolver;
-    private final List<Object> queue = new LinkedList<Object>();
-    private List<Object> addTo = queue;
+    private Deque<Object> deque = new ArrayDeque<Object>();
     private final Converter<? extends FileCollectionInternal> fileCollectionConverter;
     private final Converter<? extends FileTreeInternal> fileTreeConverter;
 
@@ -58,8 +57,16 @@ public class DefaultFileCollectionResolveContext implements ResolvableFileCollec
 
     @Override
     public FileCollectionResolveContext add(Object element) {
-        addTo.add(element);
+        if (element != null) {
+            deque.addLast(element);
+        }
         return this;
+    }
+
+    public void addNext(Object element) {
+        if (element != null) {
+            deque.addFirst(element);
+        }
     }
 
     @Override
@@ -102,51 +109,57 @@ public class DefaultFileCollectionResolveContext implements ResolvableFileCollec
     }
 
     private <T> List<T> doResolve(Converter<? extends T> converter) {
-        List<T> result = new ArrayList<T>();
-        while (!queue.isEmpty()) {
-            Object element = queue.remove(0);
-            // TODO - need to sync with BuildDependenciesOnlyFileCollectionResolveContext
-            if (element instanceof DefaultFileCollectionResolveContext) {
-                DefaultFileCollectionResolveContext nestedContext = (DefaultFileCollectionResolveContext) element;
-                converter.convertInto(nestedContext, result, fileResolver);
-            } else if (element instanceof FileCollectionContainer) {
-                FileCollectionContainer fileCollection = (FileCollectionContainer) element;
-                resolveNested(fileCollection, result, converter);
-            } else if (element instanceof FileCollection || element instanceof MinimalFileCollection) {
-                converter.convertInto(element, result, fileResolver);
-            } else if (element instanceof Task) {
-                Task task = (Task) element;
-                queue.add(0, task.getOutputs().getFiles());
-            } else if (element instanceof TaskOutputs) {
-                TaskOutputs outputs = (TaskOutputs) element;
-                queue.add(0, outputs.getFiles());
-            } else if (DeferredUtil.isDeferred(element)) {
-                Object deferredResult = DeferredUtil.unpack(element);
-                if (deferredResult != null) {
-                    queue.add(0, deferredResult);
-                }
-            } else if (element instanceof Path) {
-                queue.add(0, ((Path) element).toFile());
-            } else if (element instanceof Iterable) {
-                Iterable<?> iterable = (Iterable) element;
-                GUtil.addToCollection(queue.subList(0, 0), iterable);
-            } else if (element instanceof Object[]) {
-                Object[] array = (Object[]) element;
-                GUtil.addToCollection(queue.subList(0, 0), Arrays.asList(array));
-            } else {
-                converter.convertInto(element, result, fileResolver);
-            }
+        List<T> result = new ArrayList<T>(deque.size());
+        while (!deque.isEmpty()) {
+            Object element = deque.removeFirst();
+            resolveElement(converter, result, element);
         }
         return result;
     }
 
-    protected <T> void resolveNested(FileCollectionContainer fileCollection, List<T> result, Converter<? extends T> converter) {
-        addTo = queue.subList(0, 0);
+    // TODO - need to sync with BuildDependenciesOnlyFileCollectionResolveContext
+    private <T> void resolveElement(Converter<? extends T> converter, List<T> result, Object element) {
+        if (element instanceof DefaultFileCollectionResolveContext) {
+            converter.convertInto(element, result, fileResolver);
+        } else if (element instanceof FileCollectionContainer) {
+            resolveNested((FileCollectionContainer) element);
+        } else if (element instanceof FileCollection || element instanceof MinimalFileCollection) {
+            converter.convertInto(element, result, fileResolver);
+        } else if (element instanceof Task) {
+            addNext(((Task) element).getOutputs().getFiles());
+        } else if (element instanceof TaskOutputs) {
+            addNext(((TaskOutputs) element).getFiles());
+        } else if (DeferredUtil.isDeferred(element)) {
+            addNext(DeferredUtil.unpack(element));
+        } else if (element instanceof Path) {
+            addNext(((Path) element).toFile());
+        } else {
+            if (element instanceof Object[]) {
+                element = Arrays.asList((Object[]) element);
+            }
+
+            if (element instanceof Iterable) {
+                for (Object elem : ((Iterable<?>) element)) {
+                    resolveElement(converter, result, elem);
+                }
+            } else {
+                converter.convertInto(element, result, fileResolver);
+            }
+        }
+    }
+
+    private void resolveNested(FileCollectionContainer fileCollection) {
+        Deque<Object> oldDeque = deque;
+        Deque<Object> tempDeque = new ArrayDeque<>();
+
         try {
+            deque = tempDeque;
             fileCollection.visitContents(this);
         } finally {
-            addTo = queue;
+            deque = oldDeque;
         }
+
+        addNext(tempDeque);
     }
 
     protected interface Converter<T> {
