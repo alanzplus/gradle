@@ -25,21 +25,22 @@ import org.gradle.test.fixtures.language.Language
 import static org.gradle.integtests.fixtures.RepoScriptBlockUtil.mavenCentralRepositoryDefinition
 
 @CompileStatic
-@Builder(builderStrategy = SimpleStrategy)
+@Builder(builderStrategy = SimpleStrategy, excludes = ['projectName', 'templateName', 'language'])
 class TestProjectGeneratorConfiguration {
-    TestProjectGeneratorConfiguration(String projectName) {
-        this(projectName, projectName)
+    TestProjectGeneratorConfiguration(String projectName, Language language = Language.JAVA) {
+        this(projectName, projectName, language)
     }
 
-    TestProjectGeneratorConfiguration(String projectName, String templateName) {
+    TestProjectGeneratorConfiguration(String projectName, String templateName, Language language = Language.JAVA) {
         this.projectName = projectName
         this.templateName = templateName
+        this.language = language
     }
     String projectName
     String templateName
 
+    Language language
     GradleDsl dsl = GradleDsl.GROOVY
-    Language language = Language.JAVA
 
     String[] plugins
     String[] repositories

@@ -37,15 +37,14 @@ enum JavaTestProject {
         .setCompilerMemory('256m')
         .assembleChangeFile()
         .testChangeFile(450, 2250, 45000)),
-    LARGE_MONOLITHIC_GROOVY_PROJECT(new TestProjectGeneratorConfiguration("largeMonolithicGroovyProject")
+    LARGE_MONOLITHIC_GROOVY_PROJECT(new TestProjectGeneratorConfiguration("largeMonolithicGroovyProject", Language.GROOVY)
         .setSourceFiles(50000)
         .setSubProjects(0)
         .setDaemonMemory('1536m')
         .setCompilerMemory('4g')
         .assembleChangeFile(-1)
-        .testChangeFile(-1)
-        .setLanguage(Language.GROOVY)),
-    LARGE_GROOVY_MULTI_PROJECT(new TestProjectGeneratorConfiguration("largeGroovyMultiProject")
+        .testChangeFile(-1)),
+    LARGE_GROOVY_MULTI_PROJECT(new TestProjectGeneratorConfiguration("largeGroovyMultiProject", Language.GROOVY)
         .setSourceFiles(100)
         .setSubProjects(500)
         .setDaemonMemory('1536m')
